@@ -24,8 +24,26 @@ const MorseCodeSimulator = () => {
   const oscillatorRef = useRef(null);
   const gainNodeRef = useRef(null);
 
-  const API_BASE = window.location.port === '5173' ? 'http://localhost:8080' : '';
-  
+  // Use refs to store current values that can be accessed in closures
+  const isSenderRef = useRef(isSender);
+  const isMutedRef = useRef(isMuted);
+  const participantNameRef = useRef(participantName);
+
+  // Update refs whenever state changes
+  useEffect(() => {
+    isSenderRef.current = isSender;
+  }, [isSender]);
+
+  useEffect(() => {
+    isMutedRef.current = isMuted;
+  }, [isMuted]);
+
+  useEffect(() => {
+    participantNameRef.current = participantName;
+  }, [participantName]);
+
+  const API_BASE = window.location.port === '5173' ? 'http://localhost:8080' : 'https://';
+
   // Get URL parameters on component mount
   useEffect(() => {
     const urlParams = new URLSearchParams(window.location.search);
@@ -51,6 +69,7 @@ const MorseCodeSimulator = () => {
     Object.entries(morseCode).map(([key, value]) => [value, key])
   );
 
+
   // Initialize WebSocket connection
   useEffect(() => {
     if (!isAuthenticated || !team || !participantName) return;
@@ -60,7 +79,7 @@ const MorseCodeSimulator = () => {
         // Construct WebSocket URL with team and participant name
         const wsProtocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
         const wsUrl = `${API_BASE.replace('http', 'ws')}/ws/${team}?name=${participantName}`;
-        
+
         console.log('Connecting to WebSocket:', wsUrl);
 
         const ws = new WebSocket(wsUrl);
@@ -78,17 +97,18 @@ const MorseCodeSimulator = () => {
 
             switch (data.class_type) {
               case 'MorseSignal':
-                if (!isMuted && !isSender) {
-                  playMorseSound(data.signal === 'dot' ? 600 : 400, data.duration || (data.signal === 'dot' ? 150 : 400));
+                // Use refs to get current values instead of stale closure values
+                if (!isMutedRef.current) {
+                  //playMorseSound(data.signal === 'dot' ? 600 : 400, data.duration || (data.signal === 'dot' ? 150 : 400));
+                  playMorseSound(600, data.duration || (data.signal === 'dot' ? 150 : 400));
                 }
-                setLastSignal(data.signal);
-                addToMorseBuffer(data.signal === 'dot' ? '.' : '-');
                 break;
 
               case 'SenderChange':
                 setCurrentSender(data.sender);
                 // Update isSender based on whether we are the current sender
-                setIsSender(data.sender === participantName || data.sender === 'You');
+                console.log(data.sender === participantNameRef.current || data.sender === 'You')
+                setIsSender(data.sender === participantNameRef.current || data.sender === 'You');
                 break;
 
               case 'ParticipantsUpdate':
@@ -149,7 +169,6 @@ const MorseCodeSimulator = () => {
 
   const startMorseSound = () => {
     if (!audioContextRef.current || isMuted || oscillatorRef.current) return;
-
     const oscillator = audioContextRef.current.createOscillator();
     const gainNode = audioContextRef.current.createGain();
 
@@ -176,7 +195,7 @@ const MorseCodeSimulator = () => {
   };
 
   const playMorseSound = (frequency, duration = 150) => {
-    if (!audioContextRef.current || isMuted) return;
+    if (!audioContextRef.current || isMutedRef.current) return;
 
     const oscillator = audioContextRef.current.createOscillator();
     const gainNode = audioContextRef.current.createGain();
@@ -205,7 +224,7 @@ const MorseCodeSimulator = () => {
 
       // Set new timeout to decode after 2 seconds of inactivity
       bufferTimeoutRef.current = setTimeout(() => {
-        decodeMorseBuffer(newBuffer);
+        //decodeMorseBuffer(newBuffer);
         setMorseBuffer('');
       }, 2000);
 
@@ -321,7 +340,7 @@ const MorseCodeSimulator = () => {
     newUrl.searchParams.delete('name');
     window.history.replaceState({}, '', newUrl);
   };
-  
+
   const handleKeyPress = (e) => {
     if (e.key === 'Enter') {
       handleAuth();
@@ -350,7 +369,9 @@ const MorseCodeSimulator = () => {
     const now = Date.now();
     setPressStartTime(now);
     setIsTransmitting(true);
-    startMorseSound();
+    if (!isMuted) {
+      startMorseSound();
+    }
   };
 
   const endTransmission = () => {
@@ -374,7 +395,7 @@ const MorseCodeSimulator = () => {
     }
 
     // Add to local buffer for visual feedback
-    addToMorseBuffer(signal === 'dot' ? '.' : '-');
+    // addToMorseBuffer(signal === 'dot' ? '.' : '-');
   };
 
   const handleMouseDown = () => {
@@ -409,7 +430,7 @@ const MorseCodeSimulator = () => {
         <div className="bg-slate-800/30 backdrop-blur-sm rounded-lg p-8 max-w-md">
           <div className="text-center mb-6">
             <Radio className="h-12 w-12 text-blue-400 mx-auto mb-4" />
-            <h1 className="text-2xl font-bold">Morse Code Simulator</h1>
+            <h1 className="text-2xl font-bold">Lone Elk Morse Code Communicator</h1>
             <p className="text-slate-400 mt-2">Join your team</p>
           </div>
 
@@ -470,11 +491,6 @@ const MorseCodeSimulator = () => {
               Join Team
             </button>
           </div>
-
-          <div className="mt-6 text-xs text-slate-400 text-center">
-            <p>Team A: summer2024a | Team B: summer2024b</p>
-            <p className="mt-1">URL params: ?team=team-a&name=YourName</p>
-          </div>
         </div>
       </div>
     );
@@ -487,7 +503,7 @@ const MorseCodeSimulator = () => {
         <div className="flex items-center justify-between">
           <div className="flex items-center space-x-4">
             <Radio className="h-8 w-8 text-blue-400" />
-            <h1 className="text-2xl font-bold">Morse Code Simulator</h1>
+            <h1 className="text-2xl font-bold">Lone Elk Morse Code Communicator</h1>
             <div className="text-slate-400">
               {participantName} @ {team}
             </div>
@@ -501,7 +517,7 @@ const MorseCodeSimulator = () => {
             </div>
           </div>
 
-          
+
           <div className="flex items-center space-x-4">
             <button
               onClick={handleLogout}
@@ -522,7 +538,7 @@ const MorseCodeSimulator = () => {
       </div>
 
       {/* Main Content */}
-      <div className="flex-1 p-4 overflow-y-auto"> 
+      <div className="flex-1 p-4 overflow-y-auto">
         {/* Participants */}
         <div className="bg-slate-800/30 backdrop-blur-sm rounded-lg p-4 mb-6">
           <div className="flex items-center space-x-3 mb-3">
@@ -585,7 +601,7 @@ const MorseCodeSimulator = () => {
                 </button>
               </div>
             )}
-          </div>          
+          </div>
 
         </div>
 
@@ -603,7 +619,7 @@ const MorseCodeSimulator = () => {
             {/*    {!lastSignal && <span className="text-slate-600">−</span>}*/}
             {/*  </div>*/}
             {/*</div>*/}
-            
+
             {/*/!* Current Buffer *!/*/}
             {/*<div className="bg-slate-900/50 rounded-lg p-4 mb-6">*/}
             {/*  <div className="text-sm text-slate-400 mb-2">Current Buffer:</div>*/}

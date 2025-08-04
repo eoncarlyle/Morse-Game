@@ -14,9 +14,9 @@ import java.util.*
 
 fun Application.configureRouting() {
 
-    val passwordA = System.getenv("PWA") ?: "default-secret"
+    val passwordA = System.getProperty("pwa") ?: "default-secret"
 
-    val passwordB = System.getenv("PWB") ?: "default-secret"
+    val passwordB = System.getProperty("pwb") ?: "default-secret"
 
     val teamPasswords = mapOf(
         "team-a" to passwordA,

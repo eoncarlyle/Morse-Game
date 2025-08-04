@@ -2,10 +2,23 @@ plugins {
     kotlin("jvm") version "2.0.21"
     id("io.ktor.plugin") version "2.3.5"
     kotlin("plugin.serialization") version "1.9.20"
+    application
 }
 
-group = "com.iainschmitt.januaryplaygroundbackend"
+group = "com.iainschmitt.morsegame"
 version = "1.0-SNAPSHOT"
+
+application {
+    mainClass.set("ApplicationKt")
+}
+
+tasks.jar {
+    manifest {
+        attributes["Main-Class"] = "ApplicationKt"
+    }
+    from(configurations.runtimeClasspath.get().map { if (it.isDirectory) it else zipTree(it) })
+    duplicatesStrategy = DuplicatesStrategy.EXCLUDE
+}
 
 repositories {
     mavenCentral()
