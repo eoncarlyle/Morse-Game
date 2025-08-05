@@ -1,3 +1,4 @@
+import io.ktor.http.*
 import io.ktor.serialization.kotlinx.json.*
 import io.ktor.server.application.*
 import io.ktor.server.engine.*
@@ -10,14 +11,20 @@ import java.time.Duration
 
 
 fun main() {
-    embeddedServer(Netty, port = 8080, host = "0.0.0.0", module = Application::module)
+    embeddedServer(Netty, port = 8090, host = "0.0.0.0", module = Application::module)
         .start(wait = true)
 }
 
 fun Application.module() {
     install(CORS) {
         anyHost()
-        allowHeader("Content-Type")
+        allowHeader(HttpHeaders.ContentType)
+        allowHeader(HttpHeaders.Authorization)
+        allowMethod(HttpMethod.Options)
+        allowMethod(HttpMethod.Put)
+        allowMethod(HttpMethod.Delete)
+        allowMethod(HttpMethod.Patch)
+        allowCredentials = true
     }
     install(ContentNegotiation) {
         json()

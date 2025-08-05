@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { Volume2, VolumeX, Users, Radio } from 'lucide-react';
 
 const MorseCodeSimulator = () => {
@@ -42,8 +42,7 @@ const MorseCodeSimulator = () => {
     participantNameRef.current = participantName;
   }, [participantName]);
 
-  const API_BASE = window.location.port === '5173' ? 'http://localhost:8080' : 'https://';
-
+  const API_BASE = window.location.port === '5173' ? 'http://localhost:8080' : 'https://morse-game-api.iainschmitt.com';
   // Get URL parameters on component mount
   useEffect(() => {
     const urlParams = new URLSearchParams(window.location.search);
@@ -195,7 +194,8 @@ const MorseCodeSimulator = () => {
   };
 
   const playMorseSound = (frequency, duration = 150) => {
-    if (!audioContextRef.current || isMutedRef.current) return;
+    console.log(isSenderRef.current);
+    if (!audioContextRef.current || isMutedRef.current || isSenderRef.current) return;
 
     const oscillator = audioContextRef.current.createOscillator();
     const gainNode = audioContextRef.current.createGain();
